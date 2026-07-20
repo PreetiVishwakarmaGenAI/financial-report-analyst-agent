@@ -26,6 +26,7 @@ def test_chunk_creation():
     assert len(chunks) > 1
 
     first = chunks[0]
+    print(first)
 
     assert "id" in first
     assert "text" in first

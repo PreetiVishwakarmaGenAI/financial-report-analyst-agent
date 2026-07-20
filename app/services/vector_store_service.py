@@ -98,17 +98,29 @@ class VectorStoreService:
         self,
         query: str,
         n_results: int = 5,
+        metadata_filter: Optional[Dict] = None,
     ):
         """
         Perform semantic similarity search.
+
+        Args:
+            query: User query.
+            n_results: Number of chunks to retrieve.
+            metadata_filter: Optional metadata filter
+                            e.g. {"document_id": "..."}
         """
 
         query_embedding = self.embedding_service.embed_query(query)
 
-        results = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=n_results,
-        )
+        query_args = {
+            "query_embeddings": [query_embedding],
+            "n_results": n_results,
+        }
+
+        if metadata_filter:
+            query_args["where"] = metadata_filter
+
+        results = self.collection.query(**query_args)
 
         logger.info(
             "Retrieved %d similar documents.",
