@@ -7,6 +7,9 @@ from app.config.logging import configure_logging
 from app.config.settings import settings
 import logging
 
+from app.services.embedding_service import EmbeddingService
+from app.services.vector_store_service import VectorStoreService
+
 configure_logging()
 
 logger = logging.getLogger(__name__)
@@ -19,13 +22,28 @@ async def lifespan(app: FastAPI):
     """
 
     # Startup
-    logger.info("Application starting")
-    logger.info("Embedding Model: %s", settings.EMBEDDING_MODEL)
-    logger.info("LLM Model: %s", settings.MODEL_NAME)
-    yield
+    try:
+        logger.info("Application starting")
+        logger.info("Loading Embedding Model: %s", settings.EMBEDDING_MODEL)
+        app.state.embedding_service = EmbeddingService()
+        logger.info("Embedding model loaded Successfully")
+
+        logger.info("Initializing ChromaDB...")
+        app.state.vector_store = VectorStoreService(
+            app.state.embedding_service
+        )
+        logger.info(
+            "ChromaDB initialized with collection '%s'",
+            settings.VECTOR_COLLECTION_NAME,
+        )
+        logger.info("LLM Model: %s", settings.MODEL_NAME)
+        yield
+    except Exception as e:
+        logger.error("Error occurred during application startup: %s", str(e))
+        raise
 
     # Shutdown
-
+    logger.info("Application shutting down")
 
 app = FastAPI(
     title="Financial Report Analyst",

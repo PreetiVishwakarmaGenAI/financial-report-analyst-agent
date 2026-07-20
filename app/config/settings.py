@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
     VECTOR_DB_PATH: str = "./data/chroma_db"
+    VECTOR_COLLECTION_NAME: str = "financial_reports"
 
     # Authentication
     JWT_SECRET_KEY: str
