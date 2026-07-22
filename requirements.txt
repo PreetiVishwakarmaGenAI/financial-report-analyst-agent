@@ -1,21 +1,66 @@
+# ----------------------------
+# Web Framework
+# ----------------------------
 fastapi==0.111.0
 uvicorn==0.29.0
-python-jose[cryptography]==3.3.0   # JWT
-python-multipart==0.0.9            # File uploads
-pydantic==2.7.1
 
-langchain>=0.2.1
-# langchain-openai==0.1.8
-langchain-community>=0.2.1
-langgraph>=0.1.5
-langsmith>=0.1.63
+# ----------------------------
+# Authentication
+# ----------------------------
+python-jose[cryptography]==3.3.0
 
-chromadb>=0.5.23,<1.0
-pypdf==4.2.0
+# ----------------------------
+# File Uploads
+# ----------------------------
+python-multipart==0.0.9
+
+# ----------------------------
+# Configuration
+# ----------------------------
 python-dotenv==1.0.1
-sentence-transformers==2.7.0
-# tiktoken==0.7.0
+pydantic>=2.7.4,<3.0.0
+pydantic-settings>=2.4.0,<3.0.0
 
-black
-pydantic-settings==2.3.4
+# ----------------------------
+# LangChain Ecosystem
+# ----------------------------
+langchain==0.3.27
+langchain-community==0.3.27
+langchain-core==0.3.74
+langchain-openai==0.3.30
+# langchain-anthropic==0.3.18
+langgraph==0.5.4
+langsmith==0.4.10
+# anthropic>=0.60.0,<1
+
+# ==========================
+# OpenAI
+# ==========================
+openai==1.99.9
+tiktoken==0.11.0
+
+# ----------------------------
+# Vector Database
+# ----------------------------
+chromadb==0.5.23
+
+# ----------------------------
+# Embeddings
+# ----------------------------
+sentence-transformers==2.7.0
+
+# ----------------------------
+# PDF Processing
+# ----------------------------
+pypdf==4.2.0
+
+# ----------------------------
+# HTTP Client
+# ----------------------------
+httpx==0.28.1
+
+# ----------------------------
+# Development
+# ----------------------------
 pytest==7.4.2
+black==24.4.2

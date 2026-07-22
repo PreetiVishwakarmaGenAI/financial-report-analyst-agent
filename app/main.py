@@ -8,6 +8,8 @@ from app.config.settings import settings
 import logging
 
 from app.services.embedding_service import EmbeddingService
+from app.services.llm_service import LLMService
+from app.services.retrieval_service import RetrievalService
 from app.services.vector_store_service import VectorStoreService
 
 configure_logging()
@@ -36,7 +38,27 @@ async def lifespan(app: FastAPI):
             "ChromaDB initialized with collection '%s'",
             settings.VECTOR_COLLECTION_NAME,
         )
-        logger.info("LLM Model: %s", settings.MODEL_NAME)
+        logger.info("Initializing Retrieval Service...")
+        app.state.retrieval_service = RetrievalService(
+            app.state.vector_store
+        )
+        app.state.llm_service = LLMService()
+        logger.info("LLM Service initialized successfully.")
+
+        logger.info(
+            "Planner Model      : %s",
+            settings.PLANNER_MODEL
+        )
+
+        logger.info(
+            "Researcher Model   : %s",
+            settings.RESEARCHER_MODEL
+        )
+
+        logger.info(
+            "Synthesizer Model  : %s",
+            settings.SYNTHESIZER_MODEL
+        )
         yield
     except Exception as e:
         logger.error("Error occurred during application startup: %s", str(e))

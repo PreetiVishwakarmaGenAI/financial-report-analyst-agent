@@ -1,4 +1,5 @@
 import logging
+from multiprocessing import context
 from typing import Dict, List, Optional
 
 from app.services.vector_store_service import VectorStoreService
@@ -92,3 +93,25 @@ class RetrievalService:
         )
 
         return retrieved_chunks
+    
+    def format_context_for_llm(
+    self,
+    retrieved_chunks: List[Dict],
+    ) -> str:
+        """
+        Convert retrieved chunks into a context string
+        for the LLM.
+        """
+
+        context = []
+        for index, chunk in enumerate(retrieved_chunks, start=1):
+            metadata = chunk["metadata"]
+            page = metadata.get("page", "Unknown")
+            context.append(f"""
+                Source {index}
+                Page: {page}
+                {chunk["content"]}
+                """
+                        )
+
+        return "\n\n".join(context)

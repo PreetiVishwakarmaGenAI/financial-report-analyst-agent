@@ -7,8 +7,16 @@ class Settings(BaseSettings):
     """Application configuration."""
 
     # Anthropic
-    ANTHROPIC_API_KEY: str
-    MODEL_NAME: str = "claude-sonnet-4"
+    # ANTHROPIC_API_KEY: str
+    # MODEL_NAME: str = "claude-sonnet-4"
+
+     # OpenAI
+    OPENAI_API_KEY: str
+
+    # Models
+    PLANNER_MODEL: str
+    RESEARCHER_MODEL: str
+    SYNTHESIZER_MODEL: str
 
     # LangSmith
     LANGCHAIN_API_KEY: str
