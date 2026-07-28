@@ -1,16 +1,20 @@
 from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI
 
 from app.api.routes import router
 from app.config.logging import configure_logging
 from app.config.settings import settings
-import logging
 
 from app.services.embedding_service import EmbeddingService
-from app.services.llm_service import LLMService
-from app.services.retrieval_service import RetrievalService
 from app.services.vector_store_service import VectorStoreService
+from app.services.retrieval_service import RetrievalService
+from app.services.llm_service import LLMService
+
+from app.agents.planner_agent import PlannerAgent
+from app.agents.researcher_agent import ResearcherAgent
+from app.agents.synthesizer_agent import SynthesizerAgent
 
 configure_logging()
 
@@ -23,49 +27,111 @@ async def lifespan(app: FastAPI):
     Application startup and shutdown lifecycle.
     """
 
-    # Startup
     try:
-        logger.info("Application starting")
-        logger.info("Loading Embedding Model: %s", settings.EMBEDDING_MODEL)
-        app.state.embedding_service = EmbeddingService()
-        logger.info("Embedding model loaded Successfully")
+        logger.info("Application starting...")
 
+        # ------------------------------------------------------------------
+        # Embedding Service
+        # ------------------------------------------------------------------
+        logger.info(
+            "Loading Embedding Model: %s",
+            settings.EMBEDDING_MODEL,
+        )
+
+        app.state.embedding_service = EmbeddingService()
+
+        logger.info("Embedding model loaded successfully.")
+
+        # ------------------------------------------------------------------
+        # Vector Store
+        # ------------------------------------------------------------------
         logger.info("Initializing ChromaDB...")
+
         app.state.vector_store = VectorStoreService(
             app.state.embedding_service
         )
+
         logger.info(
             "ChromaDB initialized with collection '%s'",
             settings.VECTOR_COLLECTION_NAME,
         )
+
+        # ------------------------------------------------------------------
+        # Retrieval Service
+        # ------------------------------------------------------------------
         logger.info("Initializing Retrieval Service...")
+
         app.state.retrieval_service = RetrievalService(
             app.state.vector_store
         )
+
+        logger.info("Retrieval Service initialized successfully.")
+
+        # ------------------------------------------------------------------
+        # LLM Service
+        # ------------------------------------------------------------------
+        logger.info("Initializing LLM Service...")
+
         app.state.llm_service = LLMService()
+
         logger.info("LLM Service initialized successfully.")
 
+        # ------------------------------------------------------------------
+        # Agents
+        # ------------------------------------------------------------------
+        logger.info("Initializing Planner Agent...")
+
+        app.state.planner_agent = PlannerAgent(
+            llm_service=app.state.llm_service,
+        )
+
+        logger.info("Planner Agent initialized.")
+
+        logger.info("Initializing Researcher Agent...")
+
+        app.state.researcher_agent = ResearcherAgent(
+            retrieval_service=app.state.retrieval_service,
+        )
+
+        logger.info("Researcher Agent initialized.")
+
+        logger.info("Initializing Synthesizer Agent...")
+
+        app.state.synthesizer_agent = SynthesizerAgent(
+            llm_service=app.state.llm_service,
+        )
+
+        logger.info("Synthesizer Agent initialized.")
+
+        # ------------------------------------------------------------------
+        # Configuration
+        # ------------------------------------------------------------------
         logger.info(
             "Planner Model      : %s",
-            settings.PLANNER_MODEL
+            settings.PLANNER_MODEL,
         )
 
         logger.info(
             "Researcher Model   : %s",
-            settings.RESEARCHER_MODEL
+            settings.RESEARCHER_MODEL,
         )
 
         logger.info(
             "Synthesizer Model  : %s",
-            settings.SYNTHESIZER_MODEL
+            settings.SYNTHESIZER_MODEL,
         )
+
+        logger.info("Application startup completed successfully.")
+
         yield
-    except Exception as e:
-        logger.error("Error occurred during application startup: %s", str(e))
+
+    except Exception:
+        logger.exception("Application startup failed.")
         raise
 
-    # Shutdown
-    logger.info("Application shutting down")
+    finally:
+        logger.info("Application shutting down.")
+
 
 app = FastAPI(
     title="Financial Report Analyst",

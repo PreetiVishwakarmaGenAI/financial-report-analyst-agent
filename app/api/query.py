@@ -1,10 +1,15 @@
 import logging
+
 from fastapi import APIRouter, Request
 
+from app.agents.planner_agent import PlannerAgent
+from app.agents.researcher_agent import ResearcherAgent
+from app.agents.synthesizer_agent import SynthesizerAgent
+from app.graph.state import AgentState
 from app.schemas.query import QueryRequest
-from app.services.retrieval_service import RetrievalService
 
 logger = logging.getLogger(__name__)
+
 router = APIRouter(
     prefix="/query",
     tags=["Query"],
@@ -16,29 +21,40 @@ def query_documents(
     query_request: QueryRequest,
     request: Request,
 ):
-    llm_service = request.app.state.llm_service
-    retrieval_service = request.app.state.retrieval_service
+    """
+    Query a financial document using the multi-agent pipeline.
 
-    retrieval_result = retrieval_service.retrieve(
+    Flow:
+        Planner -> Researcher -> Synthesizer
+    """
+
+    planner_agent: PlannerAgent = request.app.state.planner_agent
+    researcher_agent: ResearcherAgent = request.app.state.researcher_agent
+    synthesizer_agent: SynthesizerAgent = request.app.state.synthesizer_agent
+
+    state = AgentState(
+        user_query=query_request.query,
         document_id=query_request.document_id,
-        query=query_request.query,
         top_k=query_request.top_k,
     )
-    context = retrieval_service.format_context_for_llm(
-            retrieval_result
-        )
 
-    answer = llm_service.answer_question(
-        question=query_request.query,
-        context=context,
-    )
+    try:
+        logger.info("Starting agent workflow.")
 
-    logger.info(
-        "Question answered successfully."
-    )
+        state = planner_agent.execute(state)
 
-    return {
-        "question": query_request.query,
-        "answer": answer,
-        "citations": retrieval_result,
-    }
+        state = researcher_agent.execute(state)
+
+        state = synthesizer_agent.execute(state)
+
+        logger.info("Workflow completed successfully.")
+
+        return {
+            "question": state.user_query,
+            "answer": state.final_answer,
+            "citations": state.retrieved_chunks,
+        }
+
+    except Exception:
+        logger.exception("Query workflow failed.")
+        raise

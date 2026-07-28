@@ -5,7 +5,7 @@ from pydantic import BaseModel
 class QueryRequest(BaseModel):
     document_id: str
     query: str
-    top_k: int = 5
+    top_k: int
 
 
 class SearchResult(BaseModel):

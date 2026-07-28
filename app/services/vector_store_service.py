@@ -97,7 +97,7 @@ class VectorStoreService:
     def similarity_search(
         self,
         query: str,
-        n_results: int = 5,
+        n_results: int,
         metadata_filter: Optional[Dict] = None,
     ):
         """

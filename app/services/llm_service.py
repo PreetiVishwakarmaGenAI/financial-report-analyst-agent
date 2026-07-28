@@ -1,155 +1,191 @@
 import logging
+from typing import Type, TypeVar
 
-# from langchain_anthropic import ChatAnthropic
-from langchain_anthropic import ChatAnthropic
-from langchain_community.chat_models import ChatAnthropic
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic import BaseModel
 
 from app.config.settings import settings
+from app.enums.agent_role import AgentRole
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class LLMService:
     """
-    Service responsible for interacting with the Large Language Model.
+    Service responsible for interacting with Large Language Models.
 
     Responsibilities
     ----------------
-    - Initialize the LLM
-    - Generate responses
-    - Centralize model configuration
-    - Hide the underlying provider from the rest of the application
+    - Initialize LLMs
+    - Generate text responses
+    - Generate structured responses
+    - Hide provider-specific implementation
 
-    This abstraction makes it easy to:
-    - Switch models
-    - Add retries
-    - Add streaming
-    - Add tool calling
-    - Track token usage
-    """
-
-    FINANCIAL_ANALYST_SYSTEM_PROMPT = """
-    You are an expert financial analyst.
-
-    Answer ONLY using the provided context.
-
-    If the answer cannot be found in the context,
-    say that the information is not available.
-
-    Do not hallucinate.
-
-    Always answer in a clear and professional manner.
+    Business logic and prompts belong in the agents,
+    not in this service.
     """
 
     def __init__(self) -> None:
+
         self.models = {
-            "planner": self._initialize_llm(settings.PLANNER_MODEL),
-            "researcher": self._initialize_llm(settings.RESEARCHER_MODEL),
-            "synthesizer": self._initialize_llm(settings.SYNTHESIZER_MODEL),
+            AgentRole.PLANNER: self._initialize_llm(
+                settings.PLANNER_MODEL
+            ),
+            AgentRole.RESEARCHER: self._initialize_llm(
+                settings.RESEARCHER_MODEL
+            ),
+            AgentRole.SYNTHESIZER: self._initialize_llm(
+                settings.SYNTHESIZER_MODEL
+            ),
         }
-    def _initialize_llm(self, model_name: str) -> ChatOpenAI:
+
+    def _initialize_llm(
+        self,
+        model_name: str,
+    ) -> BaseChatModel:
         """
-        Initialize the LangChain OpenAI model.
+        Initialize a chat model.
         """
 
         try:
             logger.info(
-                "Initializing LLM '%s'...",
+                "Initializing model '%s'...",
                 model_name,
             )
 
-            llm = ChatOpenAI(
+            return ChatOpenAI(
                 model=model_name,
                 api_key=settings.OPENAI_API_KEY,
                 temperature=0.0,
+                max_retries=2,
+                timeout=60,
             )
-            return llm
 
         except Exception:
-            logger.exception("Failed to initialize LLM.")
+            logger.exception(
+                "Failed to initialize model '%s'.",
+                model_name,
+            )
             raise
-    
-    def answer_question(
+
+    def _get_model(
         self,
-        question: str,
-        context: str,
-    ) -> str:
+        role: AgentRole,
+    ) -> BaseChatModel:
         """
-        Answer a user question using the retrieved context.
-
-        Args:
-            question: User question.
-            context: Context retrieved from the vector database.
-
-        Returns:
-            Generated answer.
+        Return the configured model for a role.
         """
 
-        prompt = f"""
-        Context:
-        {context}
+        try:
+            return self.models[role]
 
-        ----------------------------------------
+        except KeyError:
+            logger.error(
+                "Unsupported LLM role '%s'",
+                role,
+            )
 
-        Question:
-        {question}
+            raise ValueError(
+                f"Unsupported role: {role}"
+            )
 
-        Answer:
+    def _build_messages(
+        self,
+        user_prompt: str,
+        system_prompt: str = "",
+    ) -> list[BaseMessage]:
+        """
+        Construct LangChain messages.
         """
 
-        return self.generate_response(
-            role="planner",
-            user_prompt=prompt,
-            system_prompt=self.FINANCIAL_ANALYST_SYSTEM_PROMPT,
+        messages: list[BaseMessage] = []
+
+        if system_prompt:
+            messages.append(
+                SystemMessage(
+                    content=system_prompt
+                )
+            )
+
+        messages.append(
+            HumanMessage(
+                content=user_prompt
+            )
         )
+
+        return messages
 
     def generate_response(
         self,
-        role: str,
+        role: AgentRole,
         user_prompt: str,
         system_prompt: str = "",
     ) -> str:
         """
-        Generate a response from the language model.
-
-        Args:
-            user_prompt:
-                User question.
-
-            system_prompt:
-                Instructions for the model.
-
-        Returns:
-            Generated response.
+        Generate a text response.
         """
 
+        llm = self._get_model(role)
+
+        messages = self._build_messages(
+            user_prompt=user_prompt,
+            system_prompt=system_prompt,
+        )
+
+        logger.info(
+            "Generating response using role '%s'",
+            role.value,
+        )
+
         try:
-            try:
-                llm = self.models[role]
-            except KeyError:
-                logger.error("Unsupported LLM role: %s", role)
-                raise ValueError(f"Unsupported role: {role}")
-            messages = []
-
-            if system_prompt:
-                messages.append(
-                    SystemMessage(content=system_prompt)
-                )
-
-            messages.append(
-                HumanMessage(content=user_prompt)
-            )
 
             response = llm.invoke(messages)
-
-            logger.info("Response generated successfully.")
 
             return response.content
 
         except Exception:
             logger.exception(
-                "Failed to generate response."
+                "LLM invocation failed."
+            )
+            raise
+
+    def generate_structured_response(
+        self,
+        role: AgentRole,
+        user_prompt: str,
+        response_model: Type[T],
+        system_prompt: str = "",
+    ) -> T:
+        """
+        Generate validated structured output.
+        """
+
+        llm = self._get_model(role)
+
+        structured_llm = llm.with_structured_output(
+            response_model
+        )
+
+        messages = self._build_messages(
+            user_prompt=user_prompt,
+            system_prompt=system_prompt,
+        )
+
+        logger.info(
+            "Generating structured response using role '%s'",
+            role.value,
+        )
+
+        try:
+
+            return structured_llm.invoke(messages)
+
+        except Exception:
+            logger.exception(
+                "Structured LLM invocation failed."
             )
             raise

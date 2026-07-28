@@ -3,6 +3,7 @@ from multiprocessing import context
 from typing import Dict, List, Optional
 
 from app.services.vector_store_service import VectorStoreService
+from app.schemas.retrieval_model import RetrievedChunk
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +32,9 @@ class RetrievalService:
     def retrieve(
         self,
         query: str,
+        top_k: int,
         document_id: Optional[str] = None,
-        top_k: int = 5,
-    ) -> List[Dict]:
+    ) -> List[RetrievedChunk]:
         """
         Retrieve the most relevant chunks for a query.
 
@@ -77,16 +78,16 @@ class RetrievalService:
             documents,
             metadatas,
             distances,
-        ):
+        ):      
             retrieved_chunks.append(
-                {
-                    "id": doc_id,
-                    "content": document,
-                    "metadata": metadata,
-                    "score": 1 - distance,
-                }
+                RetrievedChunk(
+                    chunk_id=doc_id,
+                    content=document,
+                    page_number=metadata.get("page_number", 0),
+                    similarity_score=1 - distance,
+                    metadata=metadata,
+                )
             )
-
         logger.info(
             "Retrieved %d chunks.",
             len(retrieved_chunks),
