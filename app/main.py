@@ -16,6 +16,8 @@ from app.agents.planner_agent import PlannerAgent
 from app.agents.researcher_agent import ResearcherAgent
 from app.agents.synthesizer_agent import SynthesizerAgent
 
+from app.graph.workflow import create_workflow
+
 configure_logging()
 
 logger = logging.getLogger(__name__)
@@ -75,6 +77,17 @@ async def lifespan(app: FastAPI):
         app.state.llm_service = LLMService()
 
         logger.info("LLM Service initialized successfully.")
+
+        # ------------------------------------------------------------------
+        # Graph Workflow
+        # ------------------------------------------------------------------
+
+        app.state.workflow = create_workflow(
+            llm_service=app.state.llm_service,
+            retrieval_service=app.state.retrieval_service,
+        )
+
+        logger.info("Graph workflow initialized successfully.")
 
         # ------------------------------------------------------------------
         # Agents

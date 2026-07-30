@@ -10,7 +10,7 @@ class AgentState(BaseModel):
     document_id: str
     top_k: int = Field(description="Number of top chunks to retrieve for each query.")
 
-    task_type: TaskType = None
+    task_type: Optional[TaskType] = None
     retrieval_queries: List[str] = Field(default_factory=list)
 
     retrieved_chunks: List[RetrievedChunk] = Field(default_factory=list)

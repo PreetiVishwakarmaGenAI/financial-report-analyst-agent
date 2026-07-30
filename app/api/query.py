@@ -28,10 +28,6 @@ def query_documents(
         Planner -> Researcher -> Synthesizer
     """
 
-    planner_agent: PlannerAgent = request.app.state.planner_agent
-    researcher_agent: ResearcherAgent = request.app.state.researcher_agent
-    synthesizer_agent: SynthesizerAgent = request.app.state.synthesizer_agent
-
     state = AgentState(
         user_query=query_request.query,
         document_id=query_request.document_id,
@@ -41,18 +37,14 @@ def query_documents(
     try:
         logger.info("Starting agent workflow.")
 
-        state = planner_agent.execute(state)
-
-        state = researcher_agent.execute(state)
-
-        state = synthesizer_agent.execute(state)
+        final_state = request.app.state.workflow.invoke(state)
 
         logger.info("Workflow completed successfully.")
 
         return {
-            "question": state.user_query,
-            "answer": state.final_answer,
-            "citations": state.retrieved_chunks,
+            "question": final_state["user_query"],
+            "answer": final_state["final_answer"],
+            "citations": final_state["retrieved_chunks"],
         }
 
     except Exception:
