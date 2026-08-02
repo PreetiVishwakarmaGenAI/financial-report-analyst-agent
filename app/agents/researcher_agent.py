@@ -1,5 +1,7 @@
 import logging
 
+from langsmith import traceable
+
 from app.graph.state import AgentState
 from app.services.retrieval_service import RetrievalService
 
@@ -18,6 +20,7 @@ class ResearcherAgent:
     ):
         self.retrieval_service = retrieval_service
 
+    @traceable(name="ResearcherAgent")
     def execute(
         self,
         state: AgentState,

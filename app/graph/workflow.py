@@ -3,6 +3,7 @@ from functools import partial
 from langgraph.graph import StateGraph
 from langgraph.graph import START
 from langgraph.graph import END
+from langsmith import traceable
 
 from app.graph.state import AgentState
 from app.graph.nodes import (
@@ -18,7 +19,7 @@ from app.agents.synthesizer_agent import SynthesizerAgent
 from app.services.llm_service import LLMService
 from app.services.retrieval_service import RetrievalService
 
-
+@traceable(name="Query Workflow")
 def create_workflow(
     llm_service: LLMService,
     retrieval_service: RetrievalService,

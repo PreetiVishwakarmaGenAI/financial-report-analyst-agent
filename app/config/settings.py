@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     SYNTHESIZER_MODEL: str
 
     # LangSmith
-    LANGCHAIN_API_KEY: str
-    LANGCHAIN_TRACING_V2: bool = True
+    LANGSMITH_API_KEY: str
+    LANGSMITH_TRACING: bool = True
     LANGCHAIN_PROJECT: str = "financial-analyst-agent"
 
     # Embeddings

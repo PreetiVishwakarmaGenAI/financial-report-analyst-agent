@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 import logging
+import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, utils
 
 from app.api.routes import router
 from app.config.logging import configure_logging
@@ -17,6 +18,10 @@ from app.agents.researcher_agent import ResearcherAgent
 from app.agents.synthesizer_agent import SynthesizerAgent
 
 from app.graph.workflow import create_workflow
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 configure_logging()
 

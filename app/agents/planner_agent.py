@@ -1,5 +1,7 @@
 import logging
 
+from langsmith import traceable
+
 from app.enums.agent_role import AgentRole
 from app.graph.state import AgentState
 from app.schemas.planner_models import PlannerOutput
@@ -23,6 +25,7 @@ class PlannerAgent:
     def __init__(self, llm_service: LLMService):
         self.llm_service = llm_service
 
+    @traceable(name="PlannerAgent")
     def execute(self, state: AgentState) -> AgentState:
         """
         Execute the planning step.

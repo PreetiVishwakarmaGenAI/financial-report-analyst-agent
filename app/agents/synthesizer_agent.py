@@ -1,5 +1,7 @@
 import logging
 
+from langsmith import traceable
+
 from app.graph import state
 from app.graph.state import AgentState
 from app.enums.agent_role import AgentRole
@@ -26,6 +28,7 @@ class SynthesizerAgent:
         """
         return "\n".join([chunk.content for chunk in retrieved_chunks])
 
+    @traceable(name="SynthesizerAgent")
     def execute(
         self,
         state: AgentState,
