@@ -20,9 +20,6 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 RUN pip install --upgrade pip && \
-    pip install --prefix=/install \
-        --index-url https://download.pytorch.org/whl/cpu \
-        torch torchvision torchaudio && \
     pip install --prefix=/install -r requirements.txt
 
 # --------------------------------------------------
