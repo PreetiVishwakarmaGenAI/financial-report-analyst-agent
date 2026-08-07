@@ -1,0 +1,67 @@
+import logging
+from app.tools.base_tool import BaseTool
+from app.graph.state import AgentState
+from app.services.retrieval_service import RetrievalService
+
+
+logger = logging.getLogger(__name__)
+
+class RetrievalTool(BaseTool):
+    name = "retrieval"
+
+    def __init__(self, retrieval_service: RetrievalService = None):
+        self.retrieval_service = retrieval_service
+
+    def run(self, state: AgentState) -> AgentState:
+        """
+        Execute the retrieval tool.
+        """
+        logger.info("Retrieval Tool started.")
+
+        retrieved_chunks = []
+        
+        for question in state.retrieval_queries:
+
+            logger.debug(
+                "Retrieving chunks for retrieval query: %s",
+                question,
+            )
+            try:
+                chunks = self.retrieval_service.retrieve(
+                    query=question,
+                    document_id=state.document_id,
+                    top_k=state.top_k,
+                )
+            except Exception as e:
+                logger.error(
+                    "Error occurred while retrieving chunks for query '%s': %s",
+                    question,
+                    str(e),
+                )
+                raise
+
+            retrieved_chunks.extend(chunks)
+
+        state.retrieved_chunks = self._deduplicate_chunks(
+            retrieved_chunks
+        )
+
+        logger.info(
+            "Retrieval Tool completed. Retrieved %d unique chunks.",
+            len(state.retrieved_chunks),
+        )
+
+        return state
+
+    @staticmethod
+    def _deduplicate_chunks(chunks):
+        """
+        Remove duplicate chunks based on chunk_id.
+        """
+
+        unique_chunks = {}
+
+        for chunk in chunks:
+            unique_chunks[chunk.chunk_id] = chunk
+
+        return list(unique_chunks.values())

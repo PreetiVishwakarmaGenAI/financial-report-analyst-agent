@@ -16,3 +16,8 @@ class PlannerOutput(BaseModel):
         default_factory=list,
         description="Questions for semantic retrieval."
     )
+
+    required_tools: list[str] = Field(
+        default_factory=list,
+        description="List of tools required to fulfill the request."
+    )

@@ -21,6 +21,8 @@ from app.graph.workflow import create_workflow
 
 from dotenv import load_dotenv
 
+from app.tools.tool_registry import ToolRegistry
+
 load_dotenv()
 
 configure_logging()
@@ -93,33 +95,6 @@ async def lifespan(app: FastAPI):
         )
 
         logger.info("Graph workflow initialized successfully.")
-
-        # ------------------------------------------------------------------
-        # Agents
-        # ------------------------------------------------------------------
-        logger.info("Initializing Planner Agent...")
-
-        app.state.planner_agent = PlannerAgent(
-            llm_service=app.state.llm_service,
-        )
-
-        logger.info("Planner Agent initialized.")
-
-        logger.info("Initializing Researcher Agent...")
-
-        app.state.researcher_agent = ResearcherAgent(
-            retrieval_service=app.state.retrieval_service,
-        )
-
-        logger.info("Researcher Agent initialized.")
-
-        logger.info("Initializing Synthesizer Agent...")
-
-        app.state.synthesizer_agent = SynthesizerAgent(
-            llm_service=app.state.llm_service,
-        )
-
-        logger.info("Synthesizer Agent initialized.")
 
         # ------------------------------------------------------------------
         # Configuration

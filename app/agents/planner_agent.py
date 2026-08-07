@@ -45,15 +45,17 @@ class PlannerAgent:
 
             state.task_type = planner_output.task_type
             state.retrieval_queries = planner_output.retrieval_queries
+            state.required_tools = planner_output.required_tools
 
             logger.debug(
                 "Generated retrieval queries: %s",
                 state.retrieval_queries,
             )
             logger.info(
-                "Planner completed. Task=%s RetrievalQueries=%s",
+                "Planner completed. Task=%s RetrievalQueries=%s RequiredTools=%s",
                 state.task_type,
                 state.retrieval_queries,
+                state.required_tools,
             )
 
             return state

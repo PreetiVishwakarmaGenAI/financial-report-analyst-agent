@@ -71,3 +71,10 @@ httpx==0.28.1
 # ----------------------------
 pytest==7.4.2
 black==24.4.2
+
+# To Do , for future use.
+# torch==2.7.1
+# torchvision==0.22.1
+# torchaudio==2.7.1
+# numpy>=2.0
+# sentence-transformers==5.0.0

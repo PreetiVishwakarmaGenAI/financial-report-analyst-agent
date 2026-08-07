@@ -3,8 +3,7 @@ import logging
 from langsmith import traceable
 
 from app.graph.state import AgentState
-from app.services.retrieval_service import RetrievalService
-
+from app.tools.tool_registry import ToolRegistry
 logger = logging.getLogger(__name__)
 
 
@@ -16,9 +15,9 @@ class ResearcherAgent:
 
     def __init__(
         self,
-        retrieval_service: RetrievalService,
+        tool_registry: ToolRegistry = None,
     ):
-        self.retrieval_service = retrieval_service
+        self.tool_registry = tool_registry
 
     @traceable(name="ResearcherAgent")
     def execute(
@@ -30,44 +29,14 @@ class ResearcherAgent:
         """
 
         logger.info("Researcher Agent started.")
-
-        retrieved_chunks = []
-
-        for question in state.retrieval_queries:
-
-            logger.debug(
-                "Retrieving chunks for retrieval query: %s",
-                question,
-            )
-
-            chunks = self.retrieval_service.retrieve(
-                query=question,
-                document_id=state.document_id,
-                top_k=state.top_k,
-            )
-
-            retrieved_chunks.extend(chunks)
-
-        state.retrieved_chunks = self._deduplicate_chunks(
-            retrieved_chunks
-        )
-
-        logger.info(
-            "Researcher completed. Retrieved %d unique chunks.",
-            len(state.retrieved_chunks),
-        )
-
+        for tool_name in state.required_tools:
+            tool = self.tool_registry.get_tool(tool_name)
+            if tool is None:
+                logger.error("Unknown tool requested: %s", tool_name)
+                raise ValueError(f"Unsupported tool: {tool_name}")
+            try:
+                state = tool.run(state)
+            except Exception as e:
+                logger.error("Error occurred while running tool %s: %s", tool_name, str(e))
+                raise
         return state
-
-    @staticmethod
-    def _deduplicate_chunks(chunks):
-        """
-        Remove duplicate chunks based on chunk_id.
-        """
-
-        unique_chunks = {}
-
-        for chunk in chunks:
-            unique_chunks[chunk.chunk_id] = chunk
-
-        return list(unique_chunks.values())
