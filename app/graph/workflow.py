@@ -19,6 +19,7 @@ from app.agents.synthesizer_agent import SynthesizerAgent
 from app.services.llm_service import LLMService
 from app.services.retrieval_service import RetrievalService
 from app.tools.retrieval_tool import RetrievalTool
+from app.tools.tool_factory import create_tool_registry
 from app.tools.tool_registry import ToolRegistry
 
 @traceable(name="Query Workflow")
@@ -28,11 +29,12 @@ def create_workflow(
 ):
 
     tool_registry = ToolRegistry()
-    tool_registry.register(
-        RetrievalTool(retrieval_service=retrieval_service)
+    tool_registry = create_tool_registry(
+        retrieval_service
     )
 
-    planner = PlannerAgent(llm_service)
+
+    planner = PlannerAgent(llm_service, tool_registry=tool_registry)
     researcher = ResearcherAgent(tool_registry=tool_registry)
     synthesizer = SynthesizerAgent(llm_service)
     builder = StateGraph(AgentState)

@@ -1,6 +1,18 @@
-class BaseTool:
+from abc import ABC, abstractmethod
 
-    name: str
 
+class BaseTool(ABC):
+
+    @property
+    @abstractmethod
+    def name(self):
+        pass
+
+    @property
+    @abstractmethod
+    def description(self):
+        pass
+
+    @abstractmethod
     def run(self, state):
-        raise NotImplementedError
+        pass

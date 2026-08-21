@@ -14,7 +14,9 @@ class AgentState(BaseModel):
     retrieval_queries: List[str] = Field(default_factory=list)
 
     required_tools: List[str] = Field(default_factory=list)
+    executed_tools: Optional[List[str]] = Field(default_factory=list)
     tool_results: List[str] = Field(default_factory=list)
+    web_results: Optional[List[dict]] = Field(default_factory=list)
 
     retrieved_chunks: List[RetrievedChunk] = Field(default_factory=list)
     citations: list[Citation] = Field(default_factory=list)

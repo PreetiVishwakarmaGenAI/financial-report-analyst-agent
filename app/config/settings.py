@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     # Authentication
     JWT_SECRET_KEY: str
 
+    TAVILY_API_KEY: str
+
     # FastAPI
     HOST: str = "0.0.0.0"
     PORT: int = 8000

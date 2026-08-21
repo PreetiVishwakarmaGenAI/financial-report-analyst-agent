@@ -7,7 +7,15 @@ from app.services.retrieval_service import RetrievalService
 logger = logging.getLogger(__name__)
 
 class RetrievalTool(BaseTool):
-    name = "retrieval"
+    @property
+    def name(self):
+        return "retrieval"
+
+    @property
+    def description(self):
+        return (
+            "Retrieve information from uploaded financial reports."
+        )
 
     def __init__(self, retrieval_service: RetrievalService = None):
         self.retrieval_service = retrieval_service

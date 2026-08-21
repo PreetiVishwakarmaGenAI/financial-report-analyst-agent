@@ -17,6 +17,8 @@ class ResearcherAgent:
         self,
         tool_registry: ToolRegistry = None,
     ):
+        if tool_registry is None:
+            raise ValueError("ToolRegistry is required")
         self.tool_registry = tool_registry
 
     @traceable(name="ResearcherAgent")
@@ -29,6 +31,9 @@ class ResearcherAgent:
         """
 
         logger.info("Researcher Agent started.")
+        if not state.required_tools:
+            logger.info("No tools requested.")
+            return state
         for tool_name in state.required_tools:
             tool = self.tool_registry.get_tool(tool_name)
             if tool is None:
@@ -37,6 +42,7 @@ class ResearcherAgent:
             try:
                 state = tool.run(state)
             except Exception as e:
-                logger.error("Error occurred while running tool %s: %s", tool_name, str(e))
+                logger.exception("Error occurred while running tool %s: %s", tool_name, str(e))
                 raise
+            state.executed_tools.append(tool_name)
         return state
