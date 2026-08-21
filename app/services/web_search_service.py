@@ -17,7 +17,7 @@ class WebSearchService:
     def search(
         self,
         query: str,
-        max_results: int = 5,
+        max_results: int,
     ) -> list[dict]:
 
         logger.info("Searching web for: %s", query)

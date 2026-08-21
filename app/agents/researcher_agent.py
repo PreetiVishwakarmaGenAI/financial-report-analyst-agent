@@ -40,7 +40,7 @@ class ResearcherAgent:
                 logger.error("Unknown tool requested: %s", tool_name)
                 raise ValueError(f"Unsupported tool: {tool_name}")
             try:
-                state = tool.run(state)
+                tool_result = tool.run(state)
             except Exception as e:
                 logger.exception("Error occurred while running tool %s: %s", tool_name, str(e))
                 raise

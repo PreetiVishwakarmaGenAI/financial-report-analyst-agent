@@ -1,3 +1,4 @@
+from app.graph.state import AgentState
 from app.schemas.tool import ToolResult
 from app.tools.base_tool import BaseTool
 
@@ -27,12 +28,7 @@ class WebSearchTool(BaseTool):
     def __init__(self, web_search_service):
         self.web_search_service = web_search_service
 
-    def run(self, state):
+    def run(self, state) -> AgentState:
         query = state.user_query
-        results = self.web_search_service.search(query)
-
-        return ToolResult(
-            tool=self.name,
-            success=True,
-            output=results,
-        )
+        state.web_results = self.web_search_service.search(query, state.top_k)
+        return state

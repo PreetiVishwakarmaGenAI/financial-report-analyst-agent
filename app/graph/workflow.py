@@ -1,3 +1,4 @@
+import logging
 from functools import partial
 
 from langgraph.graph import StateGraph
@@ -22,6 +23,8 @@ from app.tools.retrieval_tool import RetrievalTool
 from app.tools.tool_factory import create_tool_registry
 from app.tools.tool_registry import ToolRegistry
 
+logger = logging.getLogger(__name__)
+
 @traceable(name="Query Workflow")
 def create_workflow(
     llm_service: LLMService,
@@ -32,7 +35,7 @@ def create_workflow(
     tool_registry = create_tool_registry(
         retrieval_service
     )
-
+    logger.info("Tool registry created with tools: %s", list(tool_registry.tools.keys()))
 
     planner = PlannerAgent(llm_service, tool_registry=tool_registry)
     researcher = ResearcherAgent(tool_registry=tool_registry)
