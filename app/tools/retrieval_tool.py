@@ -27,23 +27,40 @@ class RetrievalTool(BaseTool):
         logger.info("Retrieval Tool started.")
 
         retrieved_chunks = []
+
+        queries = state.retrieval_queries
+
+        if state.retry_count > 0:
+
+            logger.info(
+                "Refining retrieval using reflection feedback."
+            )
+
+            logger.info(
+                "Feedback: %s",
+                state.reflection_feedback,
+            )
+
+            queries = self._build_retry_queries(
+                state
+            )
         
-        for question in state.retrieval_queries:
+        for query in queries:
 
             logger.debug(
                 "Retrieving chunks for retrieval query: %s",
-                question,
+                query,
             )
             try:
                 chunks = self.retrieval_service.retrieve(
-                    query=question,
+                    query=query,
                     document_id=state.document_id,
                     top_k=state.top_k,
                 )
             except Exception as e:
                 logger.error(
                     "Error occurred while retrieving chunks for query '%s': %s",
-                    question,
+                    query,
                     str(e),
                 )
                 raise
@@ -60,6 +77,24 @@ class RetrievalTool(BaseTool):
         )
 
         return state
+
+    def _build_retry_queries(self, state: AgentState) -> list[str]:
+
+        feedback = state.reflection_feedback
+
+        return [
+            f"""
+            Original research question:
+            {query}
+
+            Reflection feedback:
+            {feedback}
+
+            Perform a more targeted search that addresses
+            the reflection feedback.
+            """
+            for query in state.retrieval_queries
+        ]
 
     @staticmethod
     def _deduplicate_chunks(chunks):

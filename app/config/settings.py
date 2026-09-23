@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     PLANNER_MODEL: str
     RESEARCHER_MODEL: str
     SYNTHESIZER_MODEL: str
-
+    REFLECTION_MODEL: str
     # LangSmith
     LANGSMITH_API_KEY: str
     LANGSMITH_TRACING: bool = True

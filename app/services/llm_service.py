@@ -41,6 +41,9 @@ class LLMService:
             AgentRole.SYNTHESIZER: self._initialize_llm(
                 settings.SYNTHESIZER_MODEL
             ),
+            AgentRole.REFLECTION: self._initialize_llm(
+                settings.REFLECTION_MODEL
+            ),
         }
 
     def _initialize_llm(

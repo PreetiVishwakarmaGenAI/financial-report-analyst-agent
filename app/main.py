@@ -114,6 +114,11 @@ async def lifespan(app: FastAPI):
             settings.SYNTHESIZER_MODEL,
         )
 
+        logger.info(
+                "Reflection Model  : %s",
+                settings.REFLECTION_MODEL,
+            )
+
         logger.info("Application startup completed successfully.")
 
         yield

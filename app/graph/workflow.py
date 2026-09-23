@@ -11,11 +11,13 @@ from app.graph.nodes import (
     planner_node,
     researcher_node,
     synthesizer_node,
+    reflection_node
 )
 
 from app.agents.planner_agent import PlannerAgent
 from app.agents.researcher_agent import ResearcherAgent
 from app.agents.synthesizer_agent import SynthesizerAgent
+from app.agents.reflection_agent import ReflectionAgent
 
 from app.services.llm_service import LLMService
 from app.services.retrieval_service import RetrievalService
@@ -40,9 +42,10 @@ def create_workflow(
     planner = PlannerAgent(llm_service, tool_registry=tool_registry)
     researcher = ResearcherAgent(tool_registry=tool_registry)
     synthesizer = SynthesizerAgent(llm_service)
-    builder = StateGraph(AgentState)
+    reflection = ReflectionAgent(llm_service)
+    graph = StateGraph(AgentState)
 
-    builder.add_node(
+    graph.add_node(
         "planner",
         partial(
             planner_node,
@@ -50,7 +53,7 @@ def create_workflow(
         ),
     )
 
-    builder.add_node(
+    graph.add_node(
         "researcher",
         partial(
             researcher_node,
@@ -58,7 +61,7 @@ def create_workflow(
         ),
     )
 
-    builder.add_node(
+    graph.add_node(
         "synthesizer",
         partial(
             synthesizer_node,
@@ -66,9 +69,25 @@ def create_workflow(
         ),
     )
 
-    builder.add_edge(START, "planner")
-    builder.add_edge("planner", "researcher")
-    builder.add_edge("researcher", "synthesizer")
-    builder.add_edge("synthesizer", END)
+    graph.add_node(
+        "reflection",
+        partial(
+            reflection_node,
+            reflection=reflection,
+        ),
+    )
 
-    return builder.compile()
+    graph.add_edge(START, "planner")
+    graph.add_edge("planner", "researcher")
+    graph.add_edge("researcher", "synthesizer")
+    graph.add_edge("synthesizer", "reflection")
+    graph.add_conditional_edges(
+        "reflection",
+        reflection.route_after_reflection,
+        {
+            "retry": "researcher",
+            "finish": END,
+        }
+    )
+
+    return graph.compile()
