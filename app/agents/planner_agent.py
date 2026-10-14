@@ -53,12 +53,15 @@ class PlannerAgent:
 
             state.task_type = planner_output.task_type
             state.retrieval_queries = planner_output.retrieval_queries
-            state.required_tools = planner_output.required_tools
+            required_tools = list(planner_output.required_tools)
 
-            logger.debug(
-                "Generated retrieval queries: %s",
-                state.retrieval_queries,
-            )
+            # A supplied document should be the first source of evidence.
+            if state.document_id:
+                if "retrieval" not in required_tools:
+                    required_tools.insert(0, "retrieval")
+
+            state.required_tools = list(dict.fromkeys(required_tools))
+
             logger.info(
                 "Planner completed. Task=%s RetrievalQueries=%s RequiredTools=%s",
                 state.task_type,

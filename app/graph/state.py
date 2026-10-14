@@ -7,7 +7,7 @@ from app.enums.task_type import TaskType
 
 class AgentState(BaseModel):
     user_query: str
-    document_id: str
+    document_id: Optional[str]
     top_k: int = Field(description="Number of top chunks to retrieve for each query.")
 
     task_type: Optional[TaskType] = None
@@ -23,12 +23,21 @@ class AgentState(BaseModel):
 
     final_answer: Optional[str] = None
 
+    # Tool-specific recovery queries
+    additional_tools: list[str] = Field(default_factory=list)
+    additional_retrieval_queries: list[str] = Field(
+        default_factory=list
+    )
+    additional_web_queries: list[str] = Field(
+        default_factory=list
+    )
+
     # Reflection
-    reflection_passed: Optional[bool] = None
-    reflection_feedback: Optional[str] = None
-    reflection_issues: Optional[List[str]] = None
-    #TODO: Consider `reflection_retry_queries` instead of `reflection_feedback` for better clarity and separation of concerns.
-    #reflection_retry_queries: list[str] = []
+    reflection_status: str | None = None
+    reflection_reason: str | None = None
+    missing_information: list[str] = Field(
+        default_factory=list
+    )
 
     # Control
     retry_count: int = 0

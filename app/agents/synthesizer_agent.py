@@ -70,6 +70,12 @@ class SynthesizerAgent:
         """
 
         try:
+            if state.retry_count >= state.max_retries:
+                logger.warning(
+                    "Maximum retries reached. "
+                    "Returning the best available answer."
+                )
+                return state
             logger.info("Synthesizer Agent started.")
             if not self.validate_state(state):
                 logger.info("Synthesizer Agent validation failed.")
@@ -93,7 +99,15 @@ class SynthesizerAgent:
 
             state.final_answer = final_answer
                 
-            logger.info("Synthesizer completed.")
+            if state.reflection_status == "RESYNTHESIZE":
+                logger.info(
+                    "Synthesizer completed after reflection. "
+                    "retry_count=%s",
+                    state.retry_count,
+                )
+                state.retry_count = state.retry_count + 1
+            else:
+                logger.info("Synthesizer completed.")
 
             return state
         except Exception as e:

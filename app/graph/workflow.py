@@ -85,9 +85,10 @@ def create_workflow(
         "reflection",
         reflection.route_after_reflection,
         {
-            "retry": "researcher",
-            "finish": END,
-        }
+            "end": END,
+            "researcher": "researcher",
+            "synthesizer": "synthesizer",
+        },
     )
 
     return graph.compile()

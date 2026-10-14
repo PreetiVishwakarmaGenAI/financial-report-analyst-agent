@@ -22,42 +22,66 @@ class ResearcherAgent:
         self.tool_registry = tool_registry
 
     @traceable(name="ResearcherAgent")
-    def execute(
-        self,
-        state: AgentState,
-    ) -> AgentState:
-        """
-        Retrieve relevant chunks for all retrieval_queries.
-        """
+    def execute(self, state: AgentState) -> AgentState:
+        logger.info(
+            "Researcher Agent started. retry_count=%s",
+            state.retry_count,
+        )
 
-        logger.info("Researcher Agent started.")
+        # Initial pass: follow the Planner.
+        # Retry pass: follow the Reflection Agent.
+        is_retry = bool(state.additional_tools)
 
-        if state.retry_count > 0:
-            logger.info(
-                "Research retry detected. retry_count=%s",
-                state.retry_count,
-            )
-            logger.info(
-                "Reflection feedback: %s",
-                state.reflection_feedback,
-            )
-        
-        if not state.required_tools:
+        if is_retry:
+            # Stop if the maximum number of retries has been reached.
+            if state.retry_count >= state.max_retries:
+                logger.warning("Maximum retries reached.")
+                return state
+            else:
+                state.retry_count = state.retry_count + 1
+
+            tools_to_run = list(state.additional_tools)
+        else:
+            tools_to_run = list(state.required_tools)
+
+        if not tools_to_run:
             logger.info("No tools requested.")
             return state
-        
-        for tool_name in state.required_tools:
+
+        for tool_name in tools_to_run:
             tool = self.tool_registry.get_tool(tool_name)
 
             if tool is None:
-                logger.error("Unknown tool requested: %s", tool_name)
-                raise ValueError(f"Unsupported tool: {tool_name}")
-            
+                raise ValueError(
+                    f"Unsupported tool: {tool_name}"
+                )
+
+            # Supply recovery queries to the relevant tool.
+            if (
+                tool_name == "retrieval"
+                and state.additional_retrieval_queries
+            ):
+                state.retrieval_queries = list(
+                    state.additional_retrieval_queries
+                )
+
             try:
-                tool_result = tool.run(state)
-            except Exception as e:
-                logger.exception("Error occurred while running tool %s: %s", tool_name, str(e))
+                logger.info(
+                    "Executing tool=%s retry_count=%s",
+                    tool_name,
+                    state.retry_count,
+                )
+
+                tool.run(state)
+
+                if tool_name not in state.executed_tools:
+                    state.executed_tools.append(tool_name)
+
+            except Exception:
+                logger.exception(
+                    "Error while executing tool %s",
+                    tool_name,
+                )
                 raise
-            state.executed_tools.append(tool_name)
-            
+
         return state
