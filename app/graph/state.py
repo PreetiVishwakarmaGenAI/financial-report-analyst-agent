@@ -41,5 +41,5 @@ class AgentState(BaseModel):
 
     # Control
     retry_count: int = 0
-    max_retries: int = 2
+    max_retries: int = 3
     error: Optional[str] = None
