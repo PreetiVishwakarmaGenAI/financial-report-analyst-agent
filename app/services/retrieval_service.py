@@ -88,10 +88,6 @@ class RetrievalService:
                     metadata=metadata,
                 )
             )
-        logger.info(
-            "Retrieved %d chunks.",
-            len(retrieved_chunks),
-        )
 
         return retrieved_chunks
     

@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     PLANNER_MODEL: str
     RESEARCHER_MODEL: str
     SYNTHESIZER_MODEL: str
-
+    REFLECTION_MODEL: str
     # LangSmith
     LANGSMITH_API_KEY: str
     LANGSMITH_TRACING: bool = True
@@ -34,6 +34,8 @@ class Settings(BaseSettings):
 
     # Authentication
     JWT_SECRET_KEY: str
+
+    TAVILY_API_KEY: str
 
     # FastAPI
     HOST: str = "0.0.0.0"

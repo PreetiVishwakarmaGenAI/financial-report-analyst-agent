@@ -1,0 +1,114 @@
+name: Financial Report Analyst Agent CI/CD
+
+on:
+  # Run CI for pushes to any branch.
+  push:
+
+  # Run CI when a PR targets main.
+  pull_request:
+    branches:
+      - main
+
+  # Allows a workflow to be started manually from GitHub Actions.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Avoid overlapping runs for the same branch.
+# A running main deployment is not cancelled by a newer main run.
+concurrency:
+  group: financial-report-analyst-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  test-and-build:
+    name: Test and Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run tests
+        env:
+          # Set only non-secret test defaults here if your settings require them.
+          # Do not put production credentials in this workflow.
+          CI: "true"
+        run: |
+          pytest -q
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Docker image build
+        run: |
+          docker build \
+            --tag financial-report-analyst-agent:${{ github.sha }} \
+            .
+
+  deploy:
+    name: Deploy to EC2
+    needs: test-and-build
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Configure this environment in GitHub if you want required approvals.
+    environment: production
+
+    steps:
+      - name: Deploy application over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          # Optional if SSH runs on a non-default port:
+          # port: ${{ secrets.EC2_SSH_PORT }}
+          script_stop: true
+          script: |
+            set -eu
+
+            APP_DIR="$HOME/financial-report-analyst-agent"
+            cd "$APP_DIR"
+
+            # Ensure this directory is a Git checkout of the expected repository.
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Build and restart services using the existing Compose configuration.
+            # This assumes the production .env and persistent data volume
+            # are already configured on EC2.
+            docker compose up -d --build
+
+            # Wait up to 150 seconds for the API to become healthy.
+            for i in $(seq 1 30); do
+              if curl --fail --silent --show-error \
+                http://127.0.0.1:8000/health; then
+                echo "Deployment health check passed."
+                exit 0
+              fi
+              sleep 5
+            done
+
+            echo "Deployment health check failed."
+            docker compose ps
+            docker compose logs --tail=100
+            exit 1

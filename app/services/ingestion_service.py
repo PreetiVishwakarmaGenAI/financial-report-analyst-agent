@@ -68,6 +68,16 @@ class IngestionService:
             filename=filename,
         )
 
+        if not pages:
+            raise ValueError(
+                f"No pages were extracted from PDF: {filename}"
+            )
+
+        if not chunks:
+            raise ValueError(
+                f"No text chunks were generated for {filename}. "
+                "Check PDF text extraction and chunking logs."
+            )
 
         # Step 3 - Prepare data for Chroma
         ids = [chunk["id"] for chunk in chunks]

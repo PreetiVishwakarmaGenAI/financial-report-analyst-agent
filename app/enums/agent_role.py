@@ -5,3 +5,4 @@ class AgentRole(StrEnum):
     PLANNER = "planner"
     RESEARCHER = "researcher"
     SYNTHESIZER = "synthesizer"
+    REFLECTION = "reflection"
