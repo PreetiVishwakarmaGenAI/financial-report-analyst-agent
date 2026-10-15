@@ -1,4 +1,4 @@
-name: Financial Analyst Agent CI/CD
+name: Financial Report Analyst Agent CI/CD
 
 on:
   # Run CI for pushes to any branch.
@@ -18,7 +18,7 @@ permissions:
 # Avoid overlapping runs for the same branch.
 # A running main deployment is not cancelled by a newer main run.
 concurrency:
-  group: financial-analyst-${{ github.workflow }}-${{ github.ref }}
+  group: financial-report-analyst-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
@@ -58,7 +58,7 @@ jobs:
       - name: Validate Docker image build
         run: |
           docker build \
-            --tag financial-analyst-agent:${{ github.sha }} \
+            --tag financial-report-analyst-agent:${{ github.sha }} \
             .
 
   deploy:
@@ -86,7 +86,7 @@ jobs:
           script: |
             set -eu
 
-            APP_DIR="$HOME/financial-analyst-agent"
+            APP_DIR="$HOME/financial-report-analyst-agent"
             cd "$APP_DIR"
 
             # Ensure this directory is a Git checkout of the expected repository.
